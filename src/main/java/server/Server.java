@@ -12,6 +12,7 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
         var engine = new DiEngine();
+        var instantiatedControllers = engine.getInstantiatedControllers();
 
         try {
             ServerSocket serverSocket = new ServerSocket(TCP_PORT);

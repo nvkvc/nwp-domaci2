@@ -2,19 +2,40 @@ package framework.di;
 import framework.di.annotations.Controller;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class DiEngine {
 
-    private final List<Class> controllers;
+    private final List<Object> instantiatedControllers;
 
     public DiEngine() {
-        controllers = initControllers();
+        this.instantiatedControllers = instantiateControllers();
+        instantiateControllers();
     }
 
-    private List<Class> initControllers() {
+    private List<Object> instantiateControllers() {
+        var controllers = new ArrayList<Object>();
+        for (var controller: collectControllers()) {
+            try {
+                controllers.add((Object) controller.getDeclaredConstructor().newInstance());
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return controllers;
+    }
+
+    private List<Class> collectControllers() {
         try {
             return getClasses("data").stream()
                     .filter(c -> isControllerAnnotated(c))
@@ -83,7 +104,7 @@ public class DiEngine {
         return classes;
     }
 
-    public List<Class> getControllers() {
-        return controllers;
+    public List<Object> getInstantiatedControllers() {
+        return instantiatedControllers;
     }
 }
