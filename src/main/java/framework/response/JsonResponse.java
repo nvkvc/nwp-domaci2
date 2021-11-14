@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 public class JsonResponse extends Response{
 
     private Gson gson;
-    private Object jsonObject;
+    public Object jsonObject;
 
     public JsonResponse(Object jsonObject)
     {
