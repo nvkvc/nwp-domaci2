@@ -1,5 +1,8 @@
 package server;
 
+import framework.di.annotations.GET;
+import framework.di.annotations.POST;
+import framework.di.annotations.Path;
 import framework.response.JsonResponse;
 import framework.response.Response;
 import framework.request.enums.Method;
@@ -9,8 +12,10 @@ import framework.request.Request;
 import framework.request.exceptions.RequestNotValidException;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ServerThread implements Runnable{
@@ -18,9 +23,11 @@ public class ServerThread implements Runnable{
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
+    private List<Object> controllers;
 
-    public ServerThread(Socket socket){
+    public ServerThread(Socket socket, List<Object> controllers){
         this.socket = socket;
+        this.controllers = controllers;
 
         try {
             in = new BufferedReader(
@@ -49,11 +56,36 @@ public class ServerThread implements Runnable{
 
 
             // Response example
-            Map<String, Object> responseMap = new HashMap<>();
-            responseMap.put("route_location", request.getLocation());
-            responseMap.put("route_method", request.getMethod().toString());
-            responseMap.put("parameters", request.getParameters());
-            Response response = new JsonResponse(responseMap);
+//            Map<String, Object> responseMap = new HashMap<>();
+//            responseMap.put("route_location", request.getLocation());
+//            responseMap.put("route_method", request.getMethod().toString());
+//            responseMap.put("parameters", request.getParameters());
+//            Response response = new JsonResponse(responseMap);
+            JsonResponse response = new JsonResponse(null);
+            for (var controller : controllers) {
+                var methods = controller.getClass().getDeclaredMethods();
+                for (var method: methods) {
+                    var request_method = request.getMethod().toString();
+                    var request_location = request.getLocation();
+                    Path path = method.getAnnotation(Path.class);
+
+                    System.out.println(path.value());
+                    System.out.println(request_location);
+
+                    if(path.value().equals(request_location)) {
+                        if(request_method.equals("GET")) {
+                            if(method.isAnnotationPresent(GET.class)) {
+                                response.jsonObject = method.invoke(controller);
+                            }
+                        }
+                        if(request_method.equals("POST")) {
+                            if(method.isAnnotationPresent(POST.class)) {
+                                response.jsonObject = method.invoke(controller);
+                            }
+                        }
+                    }
+                }
+            }
 
             out.println(response.render());
 
@@ -62,6 +94,10 @@ public class ServerThread implements Runnable{
             socket.close();
 
         } catch (IOException | RequestNotValidException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
     }
@@ -87,7 +123,7 @@ public class ServerThread implements Runnable{
         } while(!command.trim().equals(""));
 
         if(method.equals(Method.POST)) {
-            int contentLength = Integer.parseInt(header.get("content-length"));
+            int contentLength = Integer.parseInt(header.get("Content-Length"));
             char[] buff = new char[contentLength];
             in.read(buff, 0, contentLength);
             String parametersString = new String(buff);
