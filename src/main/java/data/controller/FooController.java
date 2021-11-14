@@ -1,12 +1,14 @@
 package data.controller;
 
-import data.DummyObject;
+import data.intf.FooIntf;
 import framework.di.annotations.Autowired;
 import framework.di.annotations.Controller;
+import framework.di.annotations.Qualifier;
 
 @Controller
 public class FooController {
 
     @Autowired
-    private DummyObject dummyObject;
+    @Qualifier("Fooicina")
+    private FooIntf fooIntf;
 }
