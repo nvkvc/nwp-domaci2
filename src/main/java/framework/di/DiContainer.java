@@ -40,7 +40,7 @@ public class DiContainer {
             }
         }
 
-        return clazz.getName();
+        return clazz.getSimpleName();
     }
 
     public void instantiateFromRoot(Object root) throws Exception {
@@ -87,13 +87,14 @@ public class DiContainer {
                 identifier = getIdentifierFromField(field);
                 instance = createBeanRecursively(identifier);
             } else {
-                instance = field.getClass().getConstructor().newInstance();
+                identifier = field.getType().getSimpleName();
+                instance = createBeanRecursively(identifier);
             }
         }
 
         field.set(parent, instance);
         field.setAccessible(accessible);
-        instantiateAutowiredFields(field.getClass().getFields(), instance);
+        instantiateAutowiredFields(field.getType().getDeclaredFields(), instance);
     }
 
     private boolean containsQualifier(List<Annotation> annotations) {

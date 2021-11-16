@@ -1,31 +1,25 @@
 package data.controller;
 
+import data.beans.ComponentBean;
 import data.beans.SingletonBean;
-import data.intf.FooIntf;
-import data.intf.Incrementer;
 import framework.di.annotations.*;
 
 @Controller
-public class FooController {
-
-    @Autowired
-    @Qualifier("Fooicina")
-    private FooIntf fooIntf;
+public class BazController {
 
     @Autowired
     private SingletonBean singletonBean;
 
     @Autowired
-    @Qualifier("ComponentBean")
-    private Incrementer componentBean;
+    private ComponentBean componentBean;
 
-    @Path("/foo")
+    @Path("/baz")
     @GET
     public String incrementSingleton() {
         return String.format("%d", singletonBean.increment());
     }
 
-    @Path("/foo")
+    @Path("/baz")
     @POST
     public String increment() {
         return String.format("%d", componentBean.increment());

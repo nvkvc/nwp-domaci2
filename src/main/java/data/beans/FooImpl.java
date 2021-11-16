@@ -1,4 +1,4 @@
-package data.impl;
+package data.beans;
 
 import data.DummyObject;
 import data.intf.FooIntf;
