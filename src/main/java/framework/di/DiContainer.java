@@ -24,7 +24,7 @@ public class DiContainer {
         var annotations = Arrays.asList(clazz.getDeclaredAnnotations());
         for (var annotation: annotations) {
             if (annotation instanceof Bean || annotation instanceof Service || annotation instanceof Component) {
-                var identifier = getIdentifier(clazz);
+                var identifier = getIdentifier(clazz); // identifier == qualifier
                 if (beans.containsKey(identifier)) {
                     throw new Exception("There's already a bean with name: " + identifier);
                 }
@@ -80,16 +80,16 @@ public class DiContainer {
             }
 
             var identifier = getIdentifierFromField(field);
-            instance = createBeanRecursively(identifier);
+            instance = createBean(identifier);
         } else {
             String identifier = null;
             if (containsQualifier(annotations)) {
                 identifier = getIdentifierFromField(field);
-                instance = createBeanRecursively(identifier);
             } else {
                 identifier = field.getType().getSimpleName();
-                instance = createBeanRecursively(identifier);
             }
+
+            instance = createBean(identifier);
         }
 
         field.set(parent, instance);
@@ -117,7 +117,7 @@ public class DiContainer {
         return field.getClass().getName();
     }
 
-    public Object createBeanRecursively(String identifier) throws Exception {
+    public Object createBean(String identifier) throws Exception {
         var annotations = Arrays.asList(beans.get(identifier).getDeclaredAnnotations());
         for (var a : annotations) {
             if (a instanceof Service) {

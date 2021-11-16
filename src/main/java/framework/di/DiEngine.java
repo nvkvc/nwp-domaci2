@@ -27,12 +27,6 @@ public class DiEngine {
         }
     }
 
-    private void instantiateControllerDependencies() throws Exception {
-        for (var controller: instantiatedControllers) {
-            diContainer.instantiateFromRoot(controller);
-        }
-    }
-
     private List<Object> instantiateControllers() {
         var controllers = new ArrayList<>();
         for (var controller: collectControllers()) {
@@ -60,6 +54,12 @@ public class DiEngine {
 
     private boolean isControllerAnnotated(Class clazz) {
         return clazz.getDeclaredAnnotation(Controller.class) != null;
+    }
+
+    private void instantiateControllerDependencies() throws Exception {
+        for (var controller: instantiatedControllers) {
+            diContainer.instantiateFromRoot(controller);
+        }
     }
 
     public List<Object> getInstantiatedControllers() {
