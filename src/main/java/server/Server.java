@@ -10,7 +10,7 @@ public class Server {
 
     public static final int TCP_PORT = 8080;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         var engine = new DiEngine();
         var instantiatedControllers = engine.getInstantiatedControllers();
 

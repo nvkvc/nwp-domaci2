@@ -1,5 +1,5 @@
 package framework.di;
-import framework.di.annotations.Controller;
+import framework.di.annotations.*;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -10,17 +10,35 @@ import java.util.stream.Collectors;
 public class DiEngine {
 
     private final List<Object> instantiatedControllers;
+    private final List<Class> classes;
 
-    public DiEngine() {
+    private DiContainer diContainer;
+
+    public DiEngine() throws Exception {
+        this.diContainer = new DiContainer();
+        this.classes = getClasses("data");
+        instantiateBeans(this.classes);
         this.instantiatedControllers = instantiateControllers();
-        instantiateControllers();
+        instantiateControllerDependencies();
+    }
+
+    private void instantiateBeans(List<Class> classes) throws Exception {
+        for (var clazz : classes) {
+            diContainer.addBeanDefinition(clazz);
+        }
+    }
+
+    private void instantiateControllerDependencies() throws Exception {
+        for (var controller: instantiatedControllers) {
+            diContainer.instantiateFromRoot(controller);
+        }
     }
 
     private List<Object> instantiateControllers() {
-        var controllers = new ArrayList<Object>();
+        var controllers = new ArrayList<>();
         for (var controller: collectControllers()) {
             try {
-                controllers.add((Object) controller.getDeclaredConstructor().newInstance());
+                controllers.add(controller.getDeclaredConstructor().newInstance());
             } catch (InstantiationException e) {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
@@ -36,17 +54,9 @@ public class DiEngine {
     }
 
     private List<Class> collectControllers() {
-        try {
-            return getClasses("data").stream()
-                    .filter(c -> isControllerAnnotated(c))
-                    .collect(Collectors.toList());
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return List.of();
+        return this.classes.stream()
+                .filter(c -> isControllerAnnotated(c))
+                .collect(Collectors.toList());
     }
 
     private boolean isControllerAnnotated(Class clazz) {
@@ -61,12 +71,16 @@ public class DiEngine {
      * @throws ClassNotFoundException
      * @throws IOException
      */
-    private List<Class> getClasses(String packageName)
-            throws ClassNotFoundException, IOException {
+    private List<Class> getClasses(String packageName) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         assert classLoader != null;
         String path = packageName.replace('.', '/');
-        Enumeration<URL> resources = classLoader.getResources(path);
+        Enumeration<URL> resources = null;
+        try {
+            resources = classLoader.getResources(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         List<File> dirs = new ArrayList<File>();
         while (resources.hasMoreElements()) {
             URL resource = resources.nextElement();
@@ -74,7 +88,11 @@ public class DiEngine {
         }
         ArrayList<Class> classes = new ArrayList<Class>();
         for (File directory : dirs) {
-            classes.addAll(findClasses(directory, packageName));
+            try {
+                classes.addAll(findClasses(directory, packageName));
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
         }
         return classes;
     }
