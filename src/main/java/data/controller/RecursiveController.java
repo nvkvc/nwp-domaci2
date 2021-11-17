@@ -9,6 +9,9 @@ import framework.di.annotations.Path;
 @Controller
 public class RecursiveController {
 
+//    @Autowired
+//    private Object nesto;
+
     @Autowired
     private RecursiveBean recursiveBean;
 

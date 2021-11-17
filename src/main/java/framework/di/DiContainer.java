@@ -54,9 +54,9 @@ public class DiContainer {
 
         for (var field : fields) {
             if (isAutowired(field)) {
-//                if(!isBeanServiceOrComponent(field)) {
-//                    throw new Exception("In class " + parent.getClass().getName() + " attribute " + field.getName() + " has @Autowired but it is not a Bean, Component or Service!");
-//                }
+                if(!isBeanServiceOrComponent(field)) {
+                    throw new Exception("In class " + parent.getClass().getName() + " attribute " + field.getName() + " has @Autowired but it is not a Bean, Component or Service!");
+                }
                 instantiateField(field, parent);
             }
         }
@@ -72,17 +72,18 @@ public class DiContainer {
         return false;
     }
 
-//    private boolean isBeanServiceOrComponent(Field field) throws ClassNotFoundException {
-//        Class clazz = Class.forName(field.getType().getName());
-//        //System.out.println(Arrays.toString(clazz.getDeclaredAnnotations()));
-//        for (var a : Arrays.asList(clazz.getDeclaredAnnotations())) {
-//            if (a instanceof Bean || a instanceof Service || a instanceof Component) {
-//                return true;
-//            }
-//        }
-//
-//        return false;
-//    }
+    private boolean isBeanServiceOrComponent(Field field) throws ClassNotFoundException {
+        String identifier = field.getType().getSimpleName();
+        for (var a : Arrays.asList(field.getDeclaredAnnotations())) {
+            if (a instanceof Qualifier) {
+                identifier = ((Qualifier) a).value();
+            }
+        }
+        Class clazz = beans.get(identifier);
+
+        if(clazz != null) return true;
+        else return false;
+    }
 
     private void instantiateField(Field field, Object parent) throws Exception {
         var accessible = field.isAccessible();
