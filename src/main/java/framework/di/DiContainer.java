@@ -54,6 +54,9 @@ public class DiContainer {
 
         for (var field : fields) {
             if (isAutowired(field)) {
+//                if(!isBeanServiceOrComponent(field)) {
+//                    throw new Exception("In class " + parent.getClass().getName() + " attribute " + field.getName() + " has @Autowired but it is not a Bean, Component or Service!");
+//                }
                 instantiateField(field, parent);
             }
         }
@@ -69,28 +72,31 @@ public class DiContainer {
         return false;
     }
 
+//    private boolean isBeanServiceOrComponent(Field field) throws ClassNotFoundException {
+//        Class clazz = Class.forName(field.getType().getName());
+//        //System.out.println(Arrays.toString(clazz.getDeclaredAnnotations()));
+//        for (var a : Arrays.asList(clazz.getDeclaredAnnotations())) {
+//            if (a instanceof Bean || a instanceof Service || a instanceof Component) {
+//                return true;
+//            }
+//        }
+//
+//        return false;
+//    }
+
     private void instantiateField(Field field, Object parent) throws Exception {
         var accessible = field.isAccessible();
         field.setAccessible(true);
         var annotations = Arrays.asList(field.getDeclaredAnnotations());
         Object instance = null;
+        String identifier = null;
         if (field.getClass().isInterface()) {
             if (!containsQualifier(annotations)) {
                 throw new Exception("Cannot instantiate interface without qualifier");
             }
-
-            var identifier = getIdentifierFromField(field);
-            instance = createBean(identifier);
-        } else {
-            String identifier = null;
-            if (containsQualifier(annotations)) {
-                identifier = getIdentifierFromField(field);
-            } else {
-                identifier = field.getType().getSimpleName();
-            }
-
-            instance = createBean(identifier);
         }
+        identifier = getIdentifierFromField(field);
+        instance = createBean(identifier);
 
         field.set(parent, instance);
         field.setAccessible(accessible);
@@ -113,8 +119,7 @@ public class DiContainer {
                 return ((Qualifier) a).value();
             }
         }
-
-        return field.getClass().getName();
+        return field.getType().getSimpleName();
     }
 
     public Object createBean(String identifier) throws Exception {

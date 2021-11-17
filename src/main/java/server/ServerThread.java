@@ -3,6 +3,7 @@ package server;
 import framework.di.annotations.GET;
 import framework.di.annotations.POST;
 import framework.di.annotations.Path;
+import framework.response.ErrorResponse;
 import framework.response.JsonResponse;
 import framework.response.Response;
 import framework.request.enums.Method;
@@ -24,10 +25,11 @@ public class ServerThread implements Runnable{
     private BufferedReader in;
     private PrintWriter out;
     private List<Object> controllers;
+    private Map<PathHTTP, ControllerMethod> routes;
 
-    public ServerThread(Socket socket, List<Object> controllers){
+    public ServerThread(Socket socket, Map<PathHTTP, ControllerMethod> routes){
         this.socket = socket;
-        this.controllers = controllers;
+        this.routes = routes;
 
         try {
             in = new BufferedReader(
@@ -61,31 +63,21 @@ public class ServerThread implements Runnable{
 //            responseMap.put("route_method", request.getMethod().toString());
 //            responseMap.put("parameters", request.getParameters());
 //            Response response = new JsonResponse(responseMap);
-            JsonResponse response = new JsonResponse(null);
-            for (var controller : controllers) {
-                var methods = controller.getClass().getDeclaredMethods();
-                for (var method: methods) {
-                    var request_method = request.getMethod().toString();
-                    var request_location = request.getLocation();
-                    Path path = method.getAnnotation(Path.class);
 
-                    System.out.println(path.value());
-                    System.out.println(request_location);
 
-                    if(path.value().equals(request_location)) {
-                        if(request_method.equals("GET")) {
-                            if(method.isAnnotationPresent(GET.class)) {
-                                response.jsonObject = method.invoke(controller);
-                            }
-                        }
-                        if(request_method.equals("POST")) {
-                            if(method.isAnnotationPresent(POST.class)) {
-                                response.jsonObject = method.invoke(controller);
-                            }
-                        }
-                    }
-                }
+            Response response;
+
+            var request_path = request.getLocation();
+            var request_http = request.getMethod().toString();
+            PathHTTP pathHTTP = new PathHTTP(request_path, request_http);
+
+            ControllerMethod controllerMethod = this.routes.get(pathHTTP);
+            if(controllerMethod != null) {
+                response = new JsonResponse(controllerMethod.method.invoke(controllerMethod.controller));
+            } else {
+                response = new ErrorResponse("This route does not exist!");
             }
+
 
             out.println(response.render());
 
